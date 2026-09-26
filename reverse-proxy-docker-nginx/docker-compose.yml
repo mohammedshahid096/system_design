@@ -1,0 +1,60 @@
+# version: "3.8"
+name: reverse-proxy-docker-nginx
+
+# Define the services
+services:
+  reverse-proxy:
+    build: ./reverse-proxy
+    container_name: reverse-proxy
+    ports:
+      - "8000:8000"
+    depends_on:
+      # Wait for the services to be healthy before starting Nginx
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - SERVER_SERVICE_NAME=auth-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8002:8002"
+    environment:
+      - SERVER_SERVICE_NAME=user-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    ports:
+      - "8003:8003"
+    environment:
+      - SERVER_SERVICE_NAME=order-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

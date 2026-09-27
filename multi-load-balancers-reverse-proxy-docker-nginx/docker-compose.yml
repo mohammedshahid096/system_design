@@ -1,0 +1,154 @@
+# version: "3.8"
+name: multi-load-balancers-reverse-proxy-docker-nginx
+
+# Define the services
+services:
+  reverse-proxy:
+    build: ./reverse-proxy
+    container_name: reverse-proxy
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth-lb
+      - user-lb
+      - order-lb
+
+  # =========================
+  # AUTH LOAD BALANCER
+  # =========================
+
+  auth-lb:
+    build: ./auth-load-balancer
+    container_name: auth-load-balancer
+    ports:
+      - "9001:9001"
+    depends_on:
+      auth-service-1:
+        condition: service_healthy
+      auth-service-2:
+        condition: service_healthy
+
+  # =========================
+  # USER LOAD BALANCER
+  # =========================
+
+  user-lb:
+    build: ./user-load-balancer
+    container_name: user-load-balancer
+    ports:
+      - "9002:9002"
+    depends_on:
+      user-service-1:
+        condition: service_healthy
+      user-service-2:
+        condition: service_healthy
+
+  # =========================
+  # ORDER LOAD BALANCER
+  # =========================
+
+  order-lb:
+    build: ./order-load-balancer
+    container_name: order-load-balancer
+    ports:
+      - "9003:9003"
+    depends_on:
+      order-service-1:
+        condition: service_healthy
+      order-service-2:
+        condition: service_healthy
+
+  # =========================
+  # AUTH SERVICES
+  # =========================
+
+  auth-service-1:
+    build: ./auth-service
+    container_name: auth-service-1
+    ports:
+      - "8011:8001"
+    environment:
+      - SERVER_SERVICE_NAME=auth-service-1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  auth-service-2:
+    build: ./auth-service
+    container_name: auth-service-2
+    ports:
+      - "8012:8001"
+    environment:
+      - SERVER_SERVICE_NAME=auth-service-2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =========================
+  # USER SERVICES
+  # =========================
+
+  user-service-1:
+    build: ./user-service
+    container_name: user-service-1
+    ports:
+      - "8021:8002"
+    environment:
+      - SERVER_SERVICE_NAME=user-service-1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  user-service-2:
+    build: ./user-service
+    container_name: user-service-2
+    ports:
+      - "8022:8002"
+    environment:
+      - SERVER_SERVICE_NAME=user-service-2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =========================
+  # ORDER SERVICES
+  # =========================
+
+  order-service-1:
+    build: ./order-service
+    container_name: order-service-1
+    ports:
+      - "8031:8003"
+    environment:
+      - SERVER_SERVICE_NAME=order-service-1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+  order-service-2:
+    build: ./order-service
+    container_name: order-service-2
+    ports:
+      - "8032:8003"
+    environment:
+      - SERVER_SERVICE_NAME=order-service-2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
